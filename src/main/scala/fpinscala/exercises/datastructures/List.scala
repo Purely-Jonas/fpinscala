@@ -9,6 +9,17 @@ enum List[+A]:
    */
   case Cons(head: A, tail: List[A])
 
+  override def toString: String = this match {
+    case Nil => "List()"
+    case Cons(h, t) => s"List(${toStringElements})"
+  }
+
+  private def toStringElements: String = this match {
+    case Nil => ""
+    case Cons(h, Nil) => s"$h"
+    case Cons(h, t) => s"$h, ${t.toStringElements}"
+  }
+
 object List: // `List` companion object. Contains functions for creating and working with lists.
   def sum(ints: List[Int]): Int = ints match // A function that uses pattern matching to add up a list of integers
     case Nil => 0 // The sum of the empty list is 0.
@@ -47,27 +58,48 @@ object List: // `List` companion object. Contains functions for creating and wor
   def productViaFoldRight(ns: List[Double]): Double =
     foldRight(ns, 1.0, _ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
-  def tail[A](l: List[A]): List[A] = ???
+  def tail[A](l: List[A]): List[A] = l match {
+    case Nil => sys.error("An empty list does not have a tail")
+    case Cons(_, tail) => tail
+  }
 
-  def setHead[A](l: List[A], h: A): List[A] = ???
+  def setHead[A](l: List[A], h: A): List[A] = l match
+    case Nil => sys.error("An empty list cannot get its head set")
+    case Cons(_, tail) => Cons(h, tail)
+  
 
-  def drop[A](l: List[A], n: Int): List[A] = ???
+  def drop[A](l: List[A], n: Int): List[A] = l match {
+    case empty @ Nil => empty
+    case list @ Cons(head, tail) if (n < 1) => list
+    case Cons(head, tail) => drop(tail, n - 1)
+  }
 
-  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = ???
+  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = l match {
+    case Nil => Nil
+    case Cons(head, tail) if (f(head)) => dropWhile(tail, f)
+    case list => list
+  }
 
-  def init[A](l: List[A]): List[A] = ???
+  def init[A](l: List[A]): List[A] = l match {
+    case Nil =>  sys.error("An empty list cannot have its last element removed")
+    case Cons(_, Nil) => Nil
+    case Cons(head, tail) => Cons(head, init(tail))
+  }
 
-  def length[A](l: List[A]): Int = ???
+  def length[A](l: List[A]): Int = foldRight(l, 0, (_, size) => size + 1)
 
-  def foldLeft[A,B](l: List[A], acc: B, f: (B, A) => B): B = ???
+  def foldLeft[A,B](l: List[A], acc: B, f: (B, A) => B): B = l match {
+    case Nil => acc
+    case Cons(head, tail) => foldLeft(tail, f(acc, head), f)
+  }
 
-  def sumViaFoldLeft(ns: List[Int]): Int = ???
+  def sumViaFoldLeft(ns: List[Int]): Int = foldLeft(ns, 0, _ + _)
 
-  def productViaFoldLeft(ns: List[Double]): Double = ???
+  def productViaFoldLeft(ns: List[Double]): Double = foldLeft(ns, 1, _ * _)
 
-  def lengthViaFoldLeft[A](l: List[A]): Int = ???
+  def lengthViaFoldLeft[A](l: List[A]): Int = foldLeft(l, 0, (size, _) => size + 1)
 
-  def reverse[A](l: List[A]): List[A] = ???
+  def reverse[A](l: List[A]): List[A] = foldLeft(l, Nil: List[A], (acc, e) => Cons(e,acc))
 
   def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = ???
 
