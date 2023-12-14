@@ -67,6 +67,12 @@ object List: // `List` companion object. Contains functions for creating and wor
     case Nil => sys.error("An empty list cannot get its head set")
     case Cons(_, tail) => Cons(h, tail)
   
+  def take[A](l: List[A], elementsToTake: Int): List[A] = l match {
+    case Cons(head, tail) if (elementsToTake > 0) => Cons(head, take(tail, elementsToTake - 1))
+    case list if (elementsToTake < 1) => Nil
+    case Nil => Nil
+    case Cons(_, _) => throw new Exception("This case should never be hit")
+  }
 
   def drop[A](l: List[A], n: Int): List[A] = l match {
     case empty @ Nil => empty
@@ -93,13 +99,9 @@ object List: // `List` companion object. Contains functions for creating and wor
     case Cons(head, tail) => foldLeft(tail, f(acc, head), f)
   }
 
-  def foldRightViaFoldLeft[A,B](as: List[A], acc: B, f: (A, B) => B): B = {
-    foldLeft(as, identity[B], (acc, e) => b => acc(f(e, b)))(acc)
-  }
+  def foldRightViaFoldLeft[A,B](as: List[A], acc: B, f: (A, B) => B): B = foldLeft(as, identity[B], (acc, e) => b => acc(f(e, b)))(acc)
 
-  def foldLeftViaFoldRight[A,B](l: List[A], acc: B, f: (B, A) => B): B = {
-      foldRight(l, identity[B], (e, acc) => b => acc(f(b, e)))(acc)
-  }
+  def foldLeftViaFoldRight[A,B](l: List[A], acc: B, f: (B, A) => B): B = foldRight(l, identity[B], (e, acc) => b => acc(f(b, e)))(acc)
 
   def sumViaFoldLeft(ns: List[Int]): Int = foldLeft(ns, 0, _ + _)
 
@@ -109,13 +111,9 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def reverse[A](l: List[A]): List[A] = foldLeft(l, Nil: List[A], (acc, e) => Cons(e,acc))
 
-  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = {
-    foldRight(l, r, Cons(_,_))
-  }
+  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = foldRight(l, r, Cons(_,_))
 
-  def concat[A](l: List[List[A]]): List[A] = {
-    foldRightViaFoldLeft(l, Nil: List[A], append)
-  }
+  def concat[A](l: List[List[A]]): List[A] = foldRightViaFoldLeft(l, Nil: List[A], append)
 
   def incrementEach(l: List[Int]): List[Int] = foldRightViaFoldLeft(l, Nil: List[Int], (e, acc) => Cons(e + 1, acc))
 
@@ -145,4 +143,8 @@ object List: // `List` companion object. Contains functions for creating and wor
       case (Cons(head1, tail1), Cons(head2, tail2)) => Cons(f(head1,head2), zipWith(tail1, tail2, f))
   }
 
-  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = ???
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = {
+    val subSize = length(sub)
+    take(sup, subSize)
+    ???
+  }

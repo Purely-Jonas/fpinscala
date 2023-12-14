@@ -81,3 +81,11 @@ val ownRes = addPairwise(testList1, testList2)
 res.size
 
 listToScalaList(ownRes).size
+
+listToScalaList(testList1).size
+
+val listy = take(testList1, -1)
+
+listToScalaList(listy).size
+
+SList(1, 2,3).take(-1)
