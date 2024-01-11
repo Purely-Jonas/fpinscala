@@ -43,11 +43,20 @@ object List: // `List` companion object. Contains functions for creating and wor
       case Nil => acc
       case Cons(x, xs) => f(x, foldRight(xs, acc, f))
 
+
+  // List(1, 2 ,3)
+  // Right to left
+  // fold right -> ((3 * 2) * 1)
+
+  // f(1 * f(2 * 3))
+  // fold left -> 1 * 2 * 3
+
   def sumViaFoldRight(ns: List[Int]): Int =
     foldRight(ns, 0, (x,y) => x + y)
 
-  def productViaFoldRight(ns: List[Double]): Double =
+  def productViaFoldRight(ns: List[Double]): Double = {
     foldRight(ns, 1.0, _ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
+  }
 
   def tail[A](xs: List[A]): List[A] = xs match {
     case Nil => sys.error("empty list has no tail")
@@ -78,7 +87,28 @@ object List: // `List` companion object. Contains functions for creating and wor
       case _ => xs
   }
 
-  def init[A](xs: List[A]): List[A] = ???
+  def init[A](xs: List[A]): List[A] = {
+
+    if (xs == Nil) sys.error("An empty list cannot have its last element removed")
+    else {
+      def initRec(xs2: List[A]): List[A] = {
+        xs2 match {
+          case Cons(h, t) if (t != Nil) => Cons(h, initRec(t))
+          case Cons(_, Nil) => Nil
+        }
+      }
+
+      initRec(xs) 
+    }
+  }
+
+  def init2[A](xs: List[A]): List[A] = {
+    xs match
+      case Nil => sys.error("An empty list cannot have its last element removed")
+      case Cons(_, Nil) => Nil
+      case Cons(head, tail) => Cons(head, init2(tail))
+  }
+
 
   def length[A](xs: List[A]): Int = ???
 
