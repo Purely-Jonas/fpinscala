@@ -89,3 +89,78 @@ val listy = take(testList1, -1)
 listToScalaList(listy).size
 
 SList(1, 2,3).take(-1)
+
+
+val sub = List(1, 2, 3, 4)
+val allSubsequences = List(List(), List(1), List(2), List(3), List(4), List(1, 2), List(1, 3), List(1, 4), List(2, 3), List(2, 4), List(3, 4), List(1, 2, 3), List(1, 2, 4), List(1, 3, 4), List(2, 3, 4), List(1, 2, 3, 4))
+
+val firstSubsequences = List(List(1), List(1, 2), List(1, 3), List(1, 4), List(1, 2, 3), List(1, 2, 4), List(1, 3, 4), List(1, 2, 3, 4))
+
+  /* 
+  Check whether list `sub` is contained in list `sup`
+  One way could be to first figure out all the supsequences of the main list
+  not efficient, but should work.
+
+
+  Take all elements of list and make into list.
+
+  Iterate through each element
+    - On each element build its possible subsequences
+  only needs to consider next elements
+  
+  On x, give tail and x to find all subsequences
+  
+  makeSubSequences(x, tail)
+
+  makeSubSequences(1, List(2, 3, 4))
+  x = 2, acc = List(List(1))
+  on 2, make List(1,2)
+
+  x = 3, acc = List(List(1), List(1,2))
+  on 3, make List(1,3) and List(1, 2, 3)
+
+  x = 4, acc = List(List(1), List(1,2), List(1,3), List(1, 2, 3))
+  on 4, make List(1,4), List(1, 2, 4), List(1, 3, 4) and List(1, 2, 3, 4)
+
+  result = List(List(1), List(1,2), List(1,3), List(1, 2, 3), List(1,4), List(1, 2, 4), List(1, 3, 4), List(1, 2, 3, 4))
+
+  Building all the subsequences is too expensive. It causes stackoverflow where it shouldn't.
+
+  How can I check each subsequence without saving them to memory?
+
+  starWith checks whether this collection is starts with the elements of that collection.
+*/
+
+val xs = SList.range(1, 21)
+val ys = SList.range(1, 5)
+val zs = SList.range(4,6)
+
+extension (l: SList[Int]) {
+    def append(l2: SList[Int]) = l ++ l2
+}
+
+xs.append(ys).startsWith(xs)
+xs.startsWith(SNil)
+xs.append(ys).append(zs) // .hasSubsequence(ys)
+// xs.hasSubsequence(SNil)
+
+makeSubSequences(List(1, 2,3,4))
+
+val listing1 =  List(SList.range(1, 21)*)
+
+// @annotation.tailrec
+def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match
+  case (_,Nil) => true
+  case (Cons(h,t),Cons(h2,t2)) if h == h2 => startsWith(t, t2)
+  case _ => false
+
+// @annotation.tailrec
+def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = sup match
+  case Nil => sub == Nil
+  case _ if startsWith(sup, sub) => true
+  case Cons(h,t) => hasSubsequence(t, sub)
+
+
+hasSubsequence(List(1,2,3,4), List(1,2))
+
+// hasSubsequence(List(1,2,3,4), List(5))

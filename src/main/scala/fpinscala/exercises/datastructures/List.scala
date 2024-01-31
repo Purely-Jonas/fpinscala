@@ -9,6 +9,11 @@ enum List[+A]:
    */
   case Cons(head: A, tail: List[A])
 
+  def isEmpty() = this match {
+    case Nil => true 
+    case Cons(_, _) => false
+  }
+
   override def toString: String = this match {
     case Nil => "List()"
     case Cons(h, t) => s"List(${toStringElements})"
@@ -111,7 +116,7 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def reverse[A](l: List[A]): List[A] = foldLeft(l, Nil: List[A], (acc, e) => Cons(e,acc))
 
-  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = foldRight(l, r, Cons(_,_))
+  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = foldRightViaFoldLeft(l, r, Cons(_,_))
 
   def concat[A](l: List[List[A]]): List[A] = foldRightViaFoldLeft(l, Nil: List[A], append)
 
@@ -143,8 +148,38 @@ object List: // `List` companion object. Contains functions for creating and wor
       case (Cons(head1, tail1), Cons(head2, tail2)) => Cons(f(head1,head2), zipWith(tail1, tail2, f))
   }
 
-  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = {
-    val subSize = length(sub)
-    take(sup, subSize)
-    ???
+  def exists[A](xs: List[A], predicate: A => Boolean): Boolean = xs match {
+    case Nil => false
+    case Cons(head, tail) if (predicate(head)) => true
+    case Cons(_, tail) => exists(tail, predicate)
   }
+
+  def makeSubSequencesFor[A](x: A, xs: List[A]) = {
+    foldLeft(xs, List(List(x)), (acc, element) => {
+        val subsequences = map(acc, appendViaFoldRight(_, List(element)))
+        appendViaFoldRight(acc, subsequences)
+    })
+  }
+
+  def makeSubSequences[A](sup: List[A], acc: List[List[A]] = List()): List[List[A]] = sup match {
+    case Nil => acc
+    case Cons(head, tail) => makeSubSequences(tail, appendViaFoldRight(makeSubSequencesFor(head, tail), acc))
+  }
+
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = sup match {
+    case _ if (sub.isEmpty()) => true
+    case Nil => false
+    case Cons(head, tail) => 
+      val subsequences = makeSubSequencesFor(head, tail)
+      val isSubSequence = exists(subsequences, _ == sub)
+      if (isSubSequence) true else hasSubsequence(tail, sub)
+  }
+
+  // def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = {
+  //   if (sub.isEmpty()) {
+  //     true
+  //   } else {
+  //     val subsequences = makeSubSequences(sup)
+  //     exists(subsequences, _ == sub)
+  //   }
+  // }
