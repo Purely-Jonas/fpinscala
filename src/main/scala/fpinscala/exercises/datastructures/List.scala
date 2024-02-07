@@ -142,4 +142,45 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   // def zipWith - TODO determine signature
 
-  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = ???
+  // sup = List(1, 2 ,3, 4) valids: List(1, 2, 3, 4), List(), List(1,2), List9
+  // sub List(1, 2, 3)  1/2/3/4/1,2/2,3/3,4/1,2,3/2,3,4/1,2,3,4
+  // 2,3
+
+  // drop(1)
+  // list = List(1,2,3,4)
+  // list == sub if not, then drop (1)
+  // sub = List(1, 2, 3)
+
+  // sup: 1,2,3,1,7 sub: 1,7
+  @annotation.tailrec
+  def hasSubsequence[A](list: List[A], sub: List[A]): Boolean = {
+    (list, sub) match 
+       case (Cons(lh, _), Cons(sh, Nil)) if lh == sh =>  true
+       case (Cons(lh, lt), Cons(sh, st)) if lh != sh =>  hasSubsequence(lt, sub)
+       case (Cons(lh, lt), Cons(sh, st)) if lh == sh =>  hasSubsequence(lt, st)
+       case (_, Nil) => true
+       case _ => false
+  }
+
+  def hasSubsequenceCWR[A](sup: List[A], sub: List[A]): Boolean = sup match {
+    case Nil => sub match {
+      case Nil => true
+      case _ => false
+    }
+    case Cons(supH, Nil) => sub match {
+      case Nil => false
+      case Cons(subH, Nil) => supH == subH
+      case Cons(subH, subT) => false
+    }
+    case Cons(supH, supT) => sub match {
+      case Nil => false
+      case Cons(subH, Nil) => supH == subH
+      case Cons(subH, subT) => {
+        if (supH != subH) then {
+          false
+        } else {
+          hasSubsequence(supT, subT)
+        }
+      }
+    }
+  }
