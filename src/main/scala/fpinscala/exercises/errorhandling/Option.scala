@@ -7,15 +7,26 @@ enum Option[+A]:
   case Some(get: A)
   case None
 
-  def map[B](f: A => B): Option[B] = ???
+  def map[B](f: A => B): Option[B] = this match
+    case Some(get) => Some(f(get))
+    case None => None
+  
 
-  def getOrElse[B>:A](default: => B): B = ???
+  def getOrElse[B>:A](default: => B): B = this match
+    case Some(get) => get
+    case None => default
+  
 
   def flatMap[B](f: A => Option[B]): Option[B] = ???
 
-  def orElse[B>:A](ob: => Option[B]): Option[B] = ???
+  def orElse[B>:A](ob: => Option[B]): Option[B] = this match {
+    case some @ Some(_) => some
+    case None => ob
+  }
 
   def filter(f: A => Boolean): Option[A] = ???
+
+  def orElseViaMapAndGetOrElse[B>:A](ob: => Option[B]): Option[B] = map(x => Some(x)).getOrElse(ob)
 
 object Option:
 
@@ -36,7 +47,18 @@ object Option:
     if xs.isEmpty then None
     else Some(xs.sum / xs.length)
 
-  def variance(xs: Seq[Double]): Option[Double] = ???
+  def variance(xs: Seq[Double]): Option[Double] = {
+    mean(xs).flatMap(m => {
+      val xxx: Seq[Double] = xs.map(x => Math.pow(x - m, 2))
+      mean(xxx)
+    })
+
+    for {
+      m <- mean(xs)
+      seq = xs.map(x => Math.pow(x - m, 2))
+      variance <- mean(seq)
+    } yield variance
+  }
 
   def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = ???
 
