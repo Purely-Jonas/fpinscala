@@ -1,10 +1,16 @@
 package fpinscala.exercises.laziness
 
+import scala.annotation.tailrec
+
 enum LazyList[+A]:
   case Empty
   case Cons(h: () => A, t: () => LazyList[A])
 
-  def toList: List[A] = ???
+  // Inefficient, can make a better implementation
+  //@tailrec
+  def toList: List[A] = this match
+    case Empty => List.empty
+    case Cons(h, t) => h() :: t().toList
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = // The arrow `=>` in front of the argument type `B` means that the function `f` takes its second argument by name and may choose not to evaluate it.
     this match
@@ -19,23 +25,60 @@ enum LazyList[+A]:
     case Empty => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
 
-  def take(n: Int): LazyList[A] = ???
+  def take(n: Int): LazyList[A] = this match
+    case Cons(h, t) if (n > 0) => LazyList.cons(h(), t().take(n - 1))
+    case _ => Empty
 
-  def drop(n: Int): LazyList[A] = ???
+  def drop(n: Int): LazyList[A] = this match
+    case Cons(_, t) if (n > 0) => t().drop(n - 1)
+    case left => left
 
-  def takeWhile(p: A => Boolean): LazyList[A] = ???
+  def takeWhileBasic(p: A => Boolean): LazyList[A] = this match
+    case Cons(h, t) if(p(h())) => LazyList.cons(h(), t().takeWhile(p))
+    case _ => Empty
 
-  def forAll(p: A => Boolean): Boolean = ???
+  def takeWhile(p: A => Boolean): LazyList[A] = this.foldRight(LazyList.empty)((element, acc) => if (p(element)) LazyList.cons(element, acc) else acc)
 
-  def headOption: Option[A] = ???
+  def forAll(p: A => Boolean): Boolean = this.foldRight(true)((element, acc) => p(element) && acc)
+
+  def headOption: Option[A] = this.foldRight(None: Option[A])((element, _) => Some(element))
 
   // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
   // writing your own function signatures.
 
+  def map[B](f: A => B): LazyList[B] = this.foldRight(LazyList.empty)((element, acc) => {
+    LazyList.cons(f(element), acc)
+  })
+
+  def filter(f: A => Boolean): LazyList[A] = {
+    this.foldRight(LazyList.empty){ (element, acc) => 
+      if (f(element)) LazyList.cons(element, acc) else acc
+    }
+  }
+
+  // def filterWithout(f: A => Boolean): LazyList[A] = this match
+  //   case Empty => LazyList.Empty
+  //   case Cons(h, t) => if (f(h())) filterWithout(f)
+  
+
+  /*
+    LazyList(1,2,3).map(_ + 10).filter(_ % 2 == 0) => 
+      // This will happen only when it gets executed conceptually
+      LazyList(m(1), m(2), m(3)) => LazyList(f(m(1)), f(m(2)), f(m(3))) 
+    
+
+    Cons(() => 1 + 10, () => LazyList(2,3).map(_ + 10))
+    Cons(() => () => 1 + 10 % 2 == 0, () => LazyList(2,3).map(_ + 10)).filter(_ % 2 == 0))
+  
+    fist value + the rest of the list
+
+    LazyList.cons(f(element), acc))
+  */
+  
   def startsWith[B](s: LazyList[B]): Boolean = ???
 
 
-object LazyList:
+object LazyList:    
   def cons[A](hd: => A, tl: => LazyList[A]): LazyList[A] = 
     lazy val head = hd
     lazy val tail = tl

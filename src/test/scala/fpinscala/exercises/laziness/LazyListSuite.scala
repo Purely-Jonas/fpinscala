@@ -54,7 +54,6 @@ class LazyListSuite extends PropSuite:
     case n ** lazyList =>
       assertEquals(lazyList.forAll(_ != n), !lazyList.toList.contains(n))
 
-  /*
   test("LazyList.map")(genSmallInt ** genLazyList):
     case n ** lazyList =>
       assertEquals(lazyList.map(_ + n).toList, lazyList.toList.map(_ + n))
@@ -63,6 +62,7 @@ class LazyListSuite extends PropSuite:
     case n ** lazyList =>
       assertEquals(lazyList.filter(_ != n).toList, lazyList.toList.filter(_ != n))
 
+  /*
   test("LazyList.append")(genLazyList ** genLazyList):
     case first ** second =>
       assertEquals(first.append(second).toList, first.toList ++ second.toList)
