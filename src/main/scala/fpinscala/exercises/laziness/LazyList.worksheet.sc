@@ -18,4 +18,14 @@ val sLs = SLazyList(1,2,3,4).map(valueWithSideEffect)
 sLs.toList
 
 val slsFilter = SLazyList(1, 2, 3, 4).map(valueWithSideEffect).filter(_ > 2)
-slsFilter.toList
+slsFilter
+
+val otherLs = LazyList(LazyList(1, 2, 3, 4), LazyList(1, 2), LazyList(1))
+
+otherLs.flatMap(valueWithSideEffect)
+
+LazyList.fibs.take(10).toList
+
+SLazyList().forall(_ => true)
+
+LazyList.empty.startsWith(ls)
