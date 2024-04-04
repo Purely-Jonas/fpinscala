@@ -1,6 +1,7 @@
 package fpinscala.exercises.laziness
 
 import scala.annotation.tailrec
+import fpinscala.exercises.laziness.LazyList.empty
 
 enum LazyList[+A]:
   case Empty
@@ -106,6 +107,21 @@ enum LazyList[+A]:
   }
   
   def startsWith[B](s: LazyList[B]): Boolean = zipAll(s).takeWhile(_._2.isDefined).forAll(_ == _)
+
+  def tails = LazyList.unfold(this){
+    case Empty => None
+    case list @ Cons(_, t) => Some(list -> t())
+  }.append(LazyList(empty))
+
+  def hasSubsequence[B](s: LazyList[B]): Boolean = tails.exists(_.startsWith(s))
+
+  def scanRight[B](z: => B)(f: (A, => B) => B): LazyList[B] = {
+    this.foldRight(z -> LazyList(z)){
+    case (e, (accE, accL)) => 
+      val computation = f(e,accE)
+      computation -> LazyList.cons(computation, accL)
+  }._2
+}
 
 object LazyList:    
   def cons[A](hd: => A, tl: => LazyList[A]): LazyList[A] = 

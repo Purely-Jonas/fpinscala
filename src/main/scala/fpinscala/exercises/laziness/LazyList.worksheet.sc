@@ -26,6 +26,4 @@ otherLs.flatMap(valueWithSideEffect)
 
 LazyList.fibs.take(10).toList
 
-SLazyList().forall(_ => true)
-
-LazyList.empty.startsWith(ls)
+ls.tails.map(_.toList).toList
