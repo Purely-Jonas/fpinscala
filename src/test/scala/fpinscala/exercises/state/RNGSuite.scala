@@ -57,6 +57,11 @@ class RNGSuite extends PropSuite:
       if lengthOfList <= 0 then assert(ints(lengthOfList)(rng)._1.isEmpty)
       else assert(checkRND(rng, counter, ints(lengthOfList), list => list == list.distinct))
 
+  test("RNG.intsBySequence")(genRNG ** genCounter ** genLengthOfList):
+    case rng ** counter ** lengthOfList =>
+      if lengthOfList <= 0 then assert(ints(lengthOfList)(rng)._1.isEmpty)
+      else assert(checkRND(rng, counter, intsBySequence(lengthOfList), list => list == list.distinct))
+
   test("RNG.int")(genRNG ** genCounter):
     case rng ** counter =>
       assert(checkRND(rng, counter, int, _ => true))
@@ -71,11 +76,9 @@ class RNGSuite extends PropSuite:
     case rng ** counter =>
       assert(checkRND(rng, counter, map(int)(_.toString), _.toIntOption.isDefined))
 
-  /*
-  test("RNG._double")(genRNG ** genCounter):
+  test("RNG.doubleViaMap")(genRNG ** genCounter):
     case rng ** counter =>
-      assert(checkRND(rng, counter, _double, isInInterval))
-   */
+      assert(checkRND(rng, counter, doubleViaMap, isInInterval))
 
   test("RNG.map2")(genRNG ** genCounter):
     case rng ** counter =>

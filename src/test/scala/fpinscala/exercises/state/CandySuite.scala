@@ -52,6 +52,8 @@ class CandySuite extends PropSuite:
 
   test("Candy: inserting a coin into a locked machine")(genLockedMachine): machine =>
     val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(List(Coin)).run(machine)
+    println(machine)
+    println(machine1)
     assertEquals(candies, machine.candies)
     assertEquals(coins, machine.coins + 1)                 // One more coin
     assertEquals(machine1, Machine(false, candies, coins)) // Unlock a machine
