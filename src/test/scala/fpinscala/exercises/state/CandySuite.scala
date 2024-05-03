@@ -52,8 +52,6 @@ class CandySuite extends PropSuite:
 
   test("Candy: inserting a coin into a locked machine")(genLockedMachine): machine =>
     val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(List(Coin)).run(machine)
-    println(machine)
-    println(machine1)
     assertEquals(candies, machine.candies)
     assertEquals(coins, machine.coins + 1)                 // One more coin
     assertEquals(machine1, Machine(false, candies, coins)) // Unlock a machine
@@ -82,6 +80,9 @@ class CandySuite extends PropSuite:
       val ((coins, candies), machine1): ((Int, Int), Machine) =
         simulateMachine(wantToSpendAllMyCoins).run(machine)
       val spentCoins = math.min(machine.candies, myCoins)
+
+      println(machine1)
+      println(Machine(true, candies, coins))
 
       assertEquals(candies, machine.candies - spentCoins)
       assertEquals(coins, machine.coins + spentCoins)

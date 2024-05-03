@@ -107,15 +107,6 @@ object State:
   extension [S, A](underlying: State[S, A])
     def run(s: S): (A, S) = underlying(s)
 
-    def get: State[S, S] = s => (s, s)
-
-    def set(s: S): State[S, Unit] = _ => ((), s)
-
-    def modify(f: S => S): State[S, Unit] = for {
-      s <- get
-      _ <- set(f(s))
-    } yield ()
-
     def map[B](f: A => B): State[S, B] = flatMap(a => unit(f(a)))
 
     def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] = flatMap(a => sb.map(f(a,_)))
@@ -129,8 +120,19 @@ object State:
 
   def unit[S, A](a: A): State[S, A] = State(s => (a, s))
 
-  def sequence[S, A](states: List[State[S, A]]): State[S, List[A]] = 
-    states.foldRight(unit[S, List[A]](Nil))((state, acc) => state.map2(acc)(_ :: _))
+  def sequence[S, A](states: List[State[S, A]]): State[S, List[A]] = traverse(states)(identity)
+
+  def traverse[S, A, B](list: List[A])(f: A => State[S, B]): State[S, List[B]] =
+    list.foldRight(unit[S, List[B]](Nil))((a, acc) => f(a).map2(acc)(_ :: _))
+
+  def get[S]: State[S, S] = s => (s, s)
+
+  def set[S](s: S): State[S, Unit] = _ => ((), s)
+
+  def modify[S](f: S => S): State[S, Unit] = for {
+    s <- get
+    _ <- set(f(s))
+  } yield ()
 
 enum Input:
   case Coin, Turn
@@ -140,35 +142,31 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 object Candy {
 
   val emptyTransition: PartialFunction[Machine, Machine] = {
-    case mach @ Machine(_, candies, _) if (candies < 1) => mach
+    case mach @ Machine(_, candies, _) if candies < 1 => mach
   }
 
   val coinTransitions: PartialFunction[Machine, Machine] = {
-    case mach @ Machine(true, candies, coins) if (candies > 0) =>
-      println(s"candies > 0:$mach")
-      throw new Exception("Not matching were expected")
-      mach.copy(locked = false, coins = coins + 1)
-    case mach @ Machine(false, _, coins) => println(s"candies > 0:$mach")
-      throw new Exception("Not matching were expected")
-      mach.copy(coins = coins + 1)
-    case mach: Machine => throw new Exception("Not matching were expected")
+    case mach @ Machine(false, _, _) => mach
+    case mach @ Machine(true, candies, coins) => mach.copy(locked = false, coins = coins + 1)
   }
 
   val turnTransitions: PartialFunction[Machine, Machine] = {
-    case mach @ Machine(false, candies, _) if (candies > 0) => mach.copy(locked = true, candies = candies - 1)
-    case mach: Machine => mach
+    case mach @ Machine(true, _, _) => mach
+    case mach @ Machine(false, candies, _) => mach.copy(locked = true, candies = candies - 1)
+  }
+
+  def update(input: Input): State[Machine, Unit] = State.modify {
+    val transition = input match {
+      case Input.Coin => coinTransitions
+      case Input.Turn => turnTransitions
+    }
+    emptyTransition.orElse(transition).applyOrElse(_, identity)
   }
 
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
-    val startState = State.unit[Machine, Unit](())
-    val finalState = inputs.foldRight(startState) { (input, accState) =>
-      input match {
-        case Input.Coin => accState.modify(coinTransitions)
-        case Input.Turn => accState.modify(turnTransitions)
-      }
-    }
     for {
-      machine <- finalState.get
+      _ <- State.traverse(inputs)(i => update(i))
+      machine <- State.get
     } yield machine.coins -> machine.candies
   }
 }
