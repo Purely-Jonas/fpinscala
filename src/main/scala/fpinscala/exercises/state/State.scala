@@ -114,26 +114,29 @@ object RNG:
 
 opaque type State[S, +A] = S => (A, S)
 
-object State:
+object State {
+
+  def sequence[S, A](ls: List[State[S, A]]): State[S, List[A]] = {
+    ls.foldRight[State[S, List[A]]](unit(List.empty[A])) { (elem, acc) =>
+      elem.flatMap { elm =>
+        acc.map(l => elm :: l)
+      }
+    }
+  }
+
+  def unit[S, A](a: A): State[S, A] = apply(s => (a, s))
 
   extension [S, A](underlying: State[S, A])
     def run(s: S): (A, S) = underlying(s)
 
     def map[B](f: A => B): State[S, B] = {
-      state =>
-        {
-          val (value, newState) = run(state)
-          (f(value), newState)
-        }
+      flatMap(a => state => (f(a), state))
     }
 
     def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] = {
-      state =>
-        {
-          val (value, newState)   = run(state)
-          val (value2, newState2) = sb.run(newState)
-          (f(value, value2), newState2)
-        }
+      flatMap { a =>
+        sb.flatMap { b => newState => (f(a, b), newState) }
+      }
     }
 
     def flatMap[B](f: A => State[S, B]): State[S, B] = {
@@ -147,10 +150,40 @@ object State:
 
   def apply[S, A](f: S => (A, S)): State[S, A] = f
 
+  def set[S](s: S): State[S, Unit] = _ => ((), s)
+
+  def get[S]: State[S, S] = s => (s, s)
+
+  def modify[S](f: S => S): State[S, Unit] = s => ((), f(s))
+}
+
 enum Input:
   case Coin, Turn
 
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
-object Candy:
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+object Candy {
+
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
+    val stateChanges = inputs.map { input =>
+      State.modify[Machine] { currentState =>
+        (input, currentState) match {
+
+          case (Input.Coin, Machine(true, candies, coins)) if candies > 0 =>
+            currentState.copy(locked = false, coins = coins + 1)
+
+          case (Input.Turn, Machine(false, candies, coins)) if candies > 0 =>
+            currentState.copy(locked = true, candies = candies - 1)
+
+          case input =>
+            currentState
+        }
+      }
+    }
+
+    for {
+      simulated    <- State.sequence(stateChanges)
+      finalMachine <- State.get
+    } yield (finalMachine.coins, finalMachine.candies)
+  }
+}
